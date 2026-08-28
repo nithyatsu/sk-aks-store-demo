@@ -28,6 +28,16 @@ resource mongoDb 'Radius.Data/mongoDatabases@2025-08-01-preview' = {
   }
 }
 
+resource redisCache 'Radius.Data/redisCaches@2025-08-01-preview' = {
+  name: 'redis'
+  properties: {
+    environment: environment
+    application: skAksStoreDemoApp.id
+    codeReference: 'src/makeline-service/cache.go#L36'
+    size: 'S'
+  }
+}
+
 resource rabbitmqQueue 'Radius.Messaging/rabbitMQ@2025-08-01-preview' = {
   name: 'rabbitmq'
   properties: {
@@ -214,7 +224,7 @@ resource makelineServiceImage 'Radius.Compute/containerImages@2025-08-01-preview
     application: skAksStoreDemoApp.id
     codeReference: 'src/makeline-service/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/makeline-service?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/makeline-service?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -232,7 +242,7 @@ resource orderServiceImage 'Radius.Compute/containerImages@2025-08-01-preview' =
     application: skAksStoreDemoApp.id
     codeReference: 'src/order-service/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/order-service?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/order-service?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -250,7 +260,7 @@ resource productServiceImage 'Radius.Compute/containerImages@2025-08-01-preview'
     application: skAksStoreDemoApp.id
     codeReference: 'src/product-service/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/product-service?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/product-service?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -268,7 +278,7 @@ resource storeAdminImage 'Radius.Compute/containerImages@2025-08-01-preview' = {
     application: skAksStoreDemoApp.id
     codeReference: 'src/store-admin/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/store-admin?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/store-admin?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -286,7 +296,7 @@ resource storeFrontImage 'Radius.Compute/containerImages@2025-08-01-preview' = {
     application: skAksStoreDemoApp.id
     codeReference: 'src/store-front/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/store-front?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/store-front?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -304,7 +314,7 @@ resource virtualCustomerImage 'Radius.Compute/containerImages@2025-08-01-preview
     application: skAksStoreDemoApp.id
     codeReference: 'src/virtual-customer/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/virtual-customer?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/virtual-customer?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -322,7 +332,7 @@ resource virtualWorkerImage 'Radius.Compute/containerImages@2025-08-01-preview' 
     application: skAksStoreDemoApp.id
     codeReference: 'src/virtual-worker/Dockerfile'
     build: {
-      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/virtual-worker?ref=1ed30799fd4e1d8ecf7118d160b7c560a375d125'
+      source: 'git::https://github.com/nithyatsu/sk-aks-store-demo.git//src/virtual-worker?ref=18930a0bba9f5c94d933d011fdeed4a205baf720'
       platforms: [
         'linux/amd64'
       ]
@@ -368,6 +378,20 @@ resource makelineServiceContainer 'Radius.Compute/containers@2025-08-01-preview'
           }
           ORDER_QUEUE_USERNAME: {
             value: 'radius'
+          }
+          REDIS_HOST: {
+            value: redisCache.properties.host
+          }
+          REDIS_PASSWORD: {
+            valueFrom: {
+              secretKeyRef: {
+                secretName: redisCache.properties.secrets.name
+                key: 'accessKey'
+              }
+            }
+          }
+          REDIS_PORT: {
+            value: string(redisCache.properties.port)
           }
         }
         ports: {
